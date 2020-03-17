@@ -40,49 +40,35 @@ apiRoutes.get("/orcid/:familyname/:givenname", VerifyToken, async function(req ,
             + "+AND+given-names:"
             + req.params.givenname
     var orcidusers = [];
-            try {
-                const response = await axios.get(
-                    encodeURI(url),{
+    try {
+        const response = await axios.get(
+            encodeURI(url),{
+                headers: { 'Accept': "application/json",
+                'content-type': 'application/json;charset=utf-8' }
+            }
+        );
+        var result = response.data.result;
+        if (result) {
+            var keys = Object.keys( result );
+            for( var i = 0,length = keys.length; i < length; i++ ) {
+                const orciddetails = await axios.get(
+                    encodeURI(result[ keys[ i ] ]['orcid-identifier'].uri),{
                         headers: { 'Accept': "application/json",
                         'content-type': 'application/json;charset=utf-8' }
                     }
                 );
-                var result = response.data.result;
-                if (result) {
-                    var keys = Object.keys( result );
-                    for( var i = 0,length = keys.length; i < length; i++ ) {
-                        //console.log(result[ keys[ i ] ]['orcid-identifier'].uri);
-                        const orciddetails = await axios.get(
-                            encodeURI(result[ keys[ i ] ]['orcid-identifier'].uri),{
-                                headers: { 'Accept': "application/json",
-                                'content-type': 'application/json;charset=utf-8' }
-                            }
-                        );
-                        var orciddetailsresult = orciddetails.data;
-                        //console.log(orciddetailsresult.person.name['given-names']);
-                        //console.log(orciddetailsresult.person.name['family-name']);
-                        if (orciddetailsresult['activities-summary'].employments['affiliation-group']) {
-                            //console.log(orciddetailsresult['activities-summary'].employments['affiliation-group'])//.summaries["employment-summary"].organization.name);
-                        }
-                        orcidusers.push(orciddetailsresult);
-                    }
-                    res.json(orcidusers);
-                    return
-                } else {
-                    res.status(201).send({ 'result': 'orcid ' + req.params.familyname + " " + req.params.givenname + ' not found'});
-                    return
-                }
-            } catch (error) {
-                console.log(error);
+                var orciddetailsresult = orciddetails.data;
+                orcidusers.push(orciddetailsresult);
             }
-            
-    /*
-    if(results.users) {
-        res.json({"orciduser" :results.users[0]});
-    } else {
-        res.json({'result': 'nothing'});
+            res.json(orcidusers);
+            return
+        } else {
+            res.status(201).send({ 'result': 'orcid ' + req.params.familyname + " " + req.params.givenname + ' not found'});
+            return
+        }
+    } catch (error) {
+        console.log(error);
     }
-    */
 });
 
 app.use('/orcid/api/v1', apiRoutes);
